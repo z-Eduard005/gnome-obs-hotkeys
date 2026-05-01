@@ -15,10 +15,6 @@ install_nodejs() {
     sudo pacman -S --noconfirm nodejs
   elif command -v zypper &>/dev/null; then
     sudo zypper install -y nodejs
-  elif command -v apk &>/dev/null; then
-    sudo apk add nodejs
-  elif command -v emerge &>/dev/null; then
-    sudo emerge --ask n net-libs/nodejs
   else
     echo "$(err "No supported package manager found. Please install nodejs manually.")"; exit 1
   fi
