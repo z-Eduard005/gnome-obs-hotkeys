@@ -49,6 +49,11 @@ create_gnome_shortcut() {
   gsettings set "${schema}.custom-keybinding:${path}" binding "$binding"
 }
 
+if [ "$EUID" -eq 0 ]; then
+  echo "$(err 'Do not run this script with "sudo"!')" >&2
+  exit 1
+fi
+
 proceed_install=true
 if [ -d "$OBS_HOTKEYS_DIR" ]; then
   echo "$(warn "OBS hotkeys already installed")"
