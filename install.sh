@@ -5,6 +5,8 @@ OBS_HOTKEYS_DIR="$HOME/Programs/obs-hotkeys"
 success() { printf "\033[1;32m%s\033[0m" "$1"; }
 err() { printf "\033[1;31m%s\033[0m" "$1"; }
 warn() { printf "\033[1;33m%s\033[0m" "$1"; }
+info() { printf "\033[1;34m%s\033[0m" "$1"; }
+throw_err() { echo "$(err "$1")"; exit 1; }
 
 install_nodejs() {
   if command -v dnf &>/dev/null; then
@@ -16,7 +18,7 @@ install_nodejs() {
   elif command -v zypper &>/dev/null; then
     sudo zypper install -y nodejs
   else
-    echo "$(err "No supported package manager found. Please install nodejs manually.")"; exit 1
+    throw_err "No supported package manager found. Please install nodejs manually."
   fi
 }
 
@@ -49,10 +51,7 @@ create_gnome_shortcut() {
   gsettings set "${schema}.custom-keybinding:${path}" binding "$binding"
 }
 
-if [ "$EUID" -eq 0 ]; then
-  echo "$(err 'Do not run this script with "sudo"!')" >&2
-  exit 1
-fi
+[ "$EUID" -eq 0 ] && { echo "$(err 'Do not run this script with "sudo"!')" >&2; exit 1; }
 
 proceed_install=true
 if [ -d "$OBS_HOTKEYS_DIR" ]; then
@@ -61,13 +60,13 @@ if [ -d "$OBS_HOTKEYS_DIR" ]; then
 fi
 
 if $proceed_install; then
-  install_nodejs || { echo "$(err "Failed to install nodejs")"; exit 1; }
+  install_nodejs || throw_err "Failed to install nodejs"
   rm -rf "$OBS_HOTKEYS_DIR"
   mkdir -p "$OBS_HOTKEYS_DIR"
   for f in package.json toggle-pause.js toggle-record.js; do
-    curl -fsSL "$RAW_GITHUB/obs-hotkeys/$f" -o "$OBS_HOTKEYS_DIR/$f" || { echo "$(err "Failed to download $f")"; exit 1; }
+    curl -fsSL "$RAW_GITHUB/obs-hotkeys/$f" -o "$OBS_HOTKEYS_DIR/$f" || throw_err "Failed to download $f"
   done
-  (cd "$OBS_HOTKEYS_DIR" && npm install) || { echo "$(err "npm install failed")"; exit 1; }
+  (cd "$OBS_HOTKEYS_DIR" && npm install) || throw_err "npm install failed"
 
   create_gnome_shortcut "obs-pause" "OBS Toggle Pause" "node $OBS_HOTKEYS_DIR/toggle-pause.js" "<Control><Alt>BackSpace"
   create_gnome_shortcut "obs-record" "OBS Toggle Record" "node $OBS_HOTKEYS_DIR/toggle-record.js" "<Control><Shift><Alt>BackSpace"
